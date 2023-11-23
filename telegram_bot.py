@@ -27,7 +27,7 @@ async def load_keyword(message: types.Message, state: FSMContext):
 
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     keyboard.row('noncommercial', 'commercial')
-    await message.answer("What about a license?", reply_markup=keyboard)
+    await message.answer("What about a license? (commercial/non-commercial use)", reply_markup=keyboard)
 
 async def load_licence(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
