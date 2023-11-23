@@ -5,26 +5,26 @@ from aiogram import types, Dispatcher
 from create_bot import bot
 import os
 
+# states class
 class FSMDownloader(StatesGroup):
     keyword = State()
     img_license = State()
     color = State()
     number = State()
 
-
+# define color buttons for the keyboard
 colors = ["No filter 🌐", "Black and white 🔘", "Transparent 🌀", "Red 🔴", "Orange 🟠", "Yellow 🟡",
           "Green 🟢", "Teal 🧊", "Blue 🔵", "Purple 🟣", "Pink 🎀", "White ⚪️", "Gray 💿", "Black ⚫️", "Brown 🟤"]
 
-# @dp.message_handler(commands="start", state=None)
 async def start(message: types.Message):
     await FSMDownloader.keyword.set()
     await message.answer("Enter a keyword for images.")
 
-# @dp.message_handler(state=FSMDownloader.keyword)
 async def load_keyword(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["keyword"] = message.text
     await FSMDownloader.next()
+
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     keyboard.row('noncommercial', 'commercial')
     await message.answer("What about a license?", reply_markup=keyboard)
@@ -34,6 +34,7 @@ async def load_licence(message: types.Message, state: FSMContext):
         data["license"] = message.text
     keyboard = types.ReplyKeyboardMarkup(
         resize_keyboard=True, one_time_keyboard=True)
+    
     button1 = colors[0]
     button2 = colors[1]
     button3 = colors[2]
@@ -53,10 +54,10 @@ async def load_licence(message: types.Message, state: FSMContext):
     keyboard.row(button7, button8, button9)
     keyboard.row(button10, button11, button12)
     keyboard.row(button13, button14)
+
     await FSMDownloader.next()
     await message.answer("Do you need a color filter?", reply_markup=keyboard)
 
-# @dp.message_handler(state=FSMDownloader.color)
 async def load_color(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["color"] = message.text    
@@ -97,7 +98,6 @@ async def load_color(message: types.Message, state: FSMContext):
     await FSMDownloader.next()
     await message.answer("How many images do you need? (below 10)")
 
-# @dp.message_handler(state=FSMDownloader.number)
 async def load_number(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         try: 
@@ -113,8 +113,11 @@ async def load_number(message: types.Message, state: FSMContext):
 
             await message.answer("Okay, starting. Wait a sec...")
             img_keyword = data["keyword"]
+            # define filters for icrawler
             filters = dict(color=data['filter_color'],
                            license=data['license'])
+            
+            # crawl images in google
             crawler = GoogleImageCrawler(storage={'root_dir': 'images'})
             crawler.crawl(keyword=img_keyword,
                           max_num=data['number'],
@@ -122,11 +125,13 @@ async def load_number(message: types.Message, state: FSMContext):
                           filters=filters
                           )
     
+    # add /start button 'til the next iteration
     button_start = "/start"
     keyboard_start = types.ReplyKeyboardMarkup(
         resize_keyboard=True, one_time_keyboard=True)
     keyboard_start.add(button_start)
 
+    # send images as files
     files = sorted(os.listdir('images'))
     for filename in files:
         with open(f'images/{filename}', 'rb') as path:
@@ -135,6 +140,7 @@ async def load_number(message: types.Message, state: FSMContext):
 
     await state.finish()
 
+# register all message handlers and their state
 def register_handlers(dp: Dispatcher):
     dp.register_message_handler(start, commands="start", state=None)
     dp.register_message_handler(load_keyword, state=FSMDownloader.keyword)
