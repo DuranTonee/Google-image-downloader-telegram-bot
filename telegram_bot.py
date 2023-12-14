@@ -8,7 +8,6 @@ import os
 # states class
 class FSMDownloader(StatesGroup):
     keyword = State()
-    img_license = State()
     color = State()
     number = State()
 
@@ -23,17 +22,8 @@ async def start(message: types.Message):
 async def load_keyword(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["keyword"] = message.text
-    await FSMDownloader.next()
-
-    keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    keyboard.row('noncommercial', 'commercial')
-    await message.answer("What about a license? (commercial/non-commercial use)", reply_markup=keyboard)
-
-async def load_licence(message: types.Message, state: FSMContext):
-    async with state.proxy() as data:
-        data["license"] = message.text
     keyboard = types.ReplyKeyboardMarkup(
-        resize_keyboard=True, one_time_keyboard=True)
+    resize_keyboard=True, one_time_keyboard=True)
     
     button1 = colors[0]
     button2 = colors[1]
@@ -114,8 +104,7 @@ async def load_number(message: types.Message, state: FSMContext):
             await message.answer("Okay, starting. Wait a sec...")
             img_keyword = data["keyword"]
             # define filters for icrawler
-            filters = dict(color=data['filter_color'],
-                           license=data['license'])
+            filters = dict(color=data['filter_color'])
             
             # crawl images in google
             crawler = GoogleImageCrawler(storage={'root_dir': 'images'})
@@ -144,6 +133,5 @@ async def load_number(message: types.Message, state: FSMContext):
 def register_handlers(dp: Dispatcher):
     dp.register_message_handler(start, commands="start", state=None)
     dp.register_message_handler(load_keyword, state=FSMDownloader.keyword)
-    dp.register_message_handler(load_licence, state=FSMDownloader.img_license)
     dp.register_message_handler(load_color, state=FSMDownloader.color)
     dp.register_message_handler(load_number, state=FSMDownloader.number)
