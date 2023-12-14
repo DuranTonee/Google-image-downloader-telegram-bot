@@ -10,7 +10,6 @@ class FSMDownloader(StatesGroup):
     keyword = State()
     img_type = State()
     color = State()
-    size = State()
     number = State()
 
 # define color buttons for the keyboard
@@ -26,6 +25,7 @@ async def start(message: types.Message):
 async def load_keyword(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["keyword"] = message.text
+    await FSMDownloader.next()
 
     keyboard = types.ReplyKeyboardMarkup(
     resize_keyboard=True, one_time_keyboard=True)
@@ -38,19 +38,16 @@ async def load_keyword(message: types.Message, state: FSMContext):
 
     keyboard.row(button1, button2, button3)
     keyboard.row(button4, button5)
-
-    await FSMDownloader.next()
     await message.answer("What kind of image do you need?", reply_markup=keyboard)
 
-async def load_type(message:types.Message, state: FSMContext):
+async def load_type(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data["type"] = message.text
         if data["type"] not in available_types:
             await message.answer("Use the keyboard below.")
             return
-
     keyboard = types.ReplyKeyboardMarkup(
-    resize_keyboard=True, one_time_keyboard=True)
+        resize_keyboard=True, one_time_keyboard=True)
     
     button1 = colors[0]
     button2 = colors[1]
@@ -127,16 +124,17 @@ async def load_number(message: types.Message, state: FSMContext):
             await message.answer("Enter a value less than 10")
             return
         else:
+
             await message.answer("Okay, starting. Wait a sec...")
             img_keyword = data["keyword"]
             # define filters for icrawler
-            filters = dict(color=data["filter_color"],
-                           type = data["type"])
+            filters = dict(color=data['filter_color'],
+                           type=data["type"])
             
             # crawl images in google
-            crawler = GoogleImageCrawler(storage={"root_dir": "images"})
+            crawler = GoogleImageCrawler(storage={'root_dir': 'images'})
             crawler.crawl(keyword=img_keyword,
-                          max_num=data["number"],
+                          max_num=data['number'],
                           overwrite=True,
                           filters=filters
                           )
